@@ -55,13 +55,7 @@ bool hit_world(const Ray &r, float t_min, float t_max, HitRecord &rec)
 }
 
 
-glm::vec3 random_in_unit_sphere() {
-    glm::vec3 p;
-    do {
-        p = 2.0f*glm::vec3(drand48(), drand48(), drand48()) - glm::vec3(1,1,1);
-    } while (glm::length(p) >= 1.0);
-    return p;
-}
+
 
 // This function should be called recursively (inside the function) for
 // bouncing rays when you compute the lighting for materials, like this
@@ -83,11 +77,14 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
             return rec.normal * 0.5f + 0.5f;
         }
 
-        glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+        Ray scattered;
+        glm::vec3 attenuation;
+        rec.mat_ptr->scatter(r, rec, attenuation, scattered);
+
 
         // Implement lighting for materials here
         // ...
-        return 0.5f*color(rtx, Ray(rec.p, target-rec.p), max_bounces);
+        return attenuation*color(rtx, scattered, max_bounces-1);
     }
 
     // If no hit, return sky color
@@ -99,11 +96,12 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
 // MODIFY THIS FUNCTION!
 void setupScene(RTContext &rtx, const char *filename)
 {
-    g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f);
+    g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f, new lambertian(glm::vec3(0.8, 0.3, 0.3)));
     g_scene.spheres = {
-        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f),
-        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f),
-        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f),
+        Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, new lambertian(glm::vec3(0.8, 0.8, 0.3))),
+        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, new lambertian(glm::vec3(0.8, 0.8, 0.0))),
+        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f, new lambertian(glm::vec3(0.8, 0.6, 0.2))),
+        Sphere(glm::vec3(0.75f, 0.75f, 0.0f), 0.25f, new lambertian(glm::vec3(0.8, 0.8, 0.8))),
     };
     //g_scene.boxes = {
     //    Box(glm::vec3(0.0f, -0.25f, 0.0f), glm::vec3(0.25f)),
