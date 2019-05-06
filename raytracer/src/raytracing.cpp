@@ -82,12 +82,16 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
         glm::vec3 attenuation;
 
         if (rec.mat_ptr != NULL) {
-            rec.mat_ptr->scatter(r, rec, attenuation, scattered);
+            if(rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
+                return attenuation*color(rtx, scattered, max_bounces-1);
+            } else {
+                return glm::vec3(0.0f);
+            }
         }
 
         // Implement lighting for materials here
         // ...
-        return attenuation*color(rtx, scattered, max_bounces-1);
+        return glm::vec3(0.0f);
     }
 
     // If no hit, return sky color
@@ -102,7 +106,9 @@ void setupScene(RTContext &rtx, const char *filename)
     g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f, new lambertian(glm::vec3(0.8, 0.3, 0.3)));
     g_scene.spheres = {
         Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, new lambertian(glm::vec3(0.8, 0.8, 0.3))),
-        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, new lambertian(glm::vec3(0.8, 0.8, 0.0))),
+        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, new dielectric(1.5)),
+        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), -0.45f, new dielectric(1.5)),
+
         Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f, new metal(glm::vec3(0.8, 0.6, 0.2))),
         Sphere(glm::vec3(0.75f, 0.75f, 0.0f), 0.25f, new lambertian(glm::vec3(0.8, 0.8, 0.8))),
     };

@@ -135,7 +135,7 @@ void drawImage(Context &ctx)
 // MODIFY THIS FUNCTION
 void showGui(Context &ctx)
 {
-    if (ImGui::SliderInt("Max bounces", &ctx.rtx.max_bounces, 0, 10)) {
+    if (ImGui::SliderInt("Max bounces", &ctx.rtx.max_bounces, 0, 50)) {
         rt::resetAccumulation(ctx.rtx);
     }
     if (ImGui::ColorEdit3("Sky color", &ctx.rtx.sky_color[0])) {
