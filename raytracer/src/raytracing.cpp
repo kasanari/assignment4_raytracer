@@ -129,11 +129,18 @@ void updateLine(RTContext &rtx, int y)
     // You can try to parallelise this loop by uncommenting this line:
     //#pragma omp parallel for schedule(dynamic)
     for (int x = 0; x < nx; ++x) {
-        float u = (float(x) + 0.5f) / float(nx);
-        float v = (float(y) + 0.5f) / float(ny);
-        Ray r(origin, lower_left_corner + u * horizontal + v * vertical);
-        r.A = glm::vec3(world_from_view * glm::vec4(r.A, 1.0f));
-        r.B = glm::vec3(world_from_view * glm::vec4(r.B, 0.0f));
+        glm::vec3 c = glm::vec3(0,0,0);
+        for (int s = 0; s < rtx.antialiasing_samples; s++) {
+            float u = (float(x) + drand48()) / float(nx);
+            float v = (float(y) + drand48()) / float(ny);
+            Ray r(origin, lower_left_corner + u * horizontal + v * vertical);
+            r.A = glm::vec3(world_from_view * glm::vec4(r.A, 1.0f));
+            r.B = glm::vec3(world_from_view * glm::vec4(r.B, 0.0f));
+
+        
+            c += color(rtx, r, rtx.max_bounces);
+        }
+        c /= float(rtx.antialiasing_samples);
 
         if (rtx.current_frame <= 0) {
             // Here we make the first frame blend with the old image,
@@ -141,7 +148,7 @@ void updateLine(RTContext &rtx, int y)
             glm::vec4 old = rtx.image[y * nx + x];
             rtx.image[y * nx + x] = glm::clamp(old / glm::max(1.0f, old.a), 0.0f, 1.0f);
         }
-        glm::vec3 c = color(rtx, r, rtx.max_bounces);
+
         rtx.image[y * nx + x] += glm::vec4(c, 1.0f);
     }
 }
