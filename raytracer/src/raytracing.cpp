@@ -72,7 +72,7 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
     if (max_bounces < 0) return glm::vec3(0.0f);
 
     HitRecord rec;
-    if (hit_world(r, 0.0f+0.001f, 9999.0f, rec)) {
+    if (hit_world(r, 0.0f+rtx.epsilon, 9999.0f, rec)) {
         rec.normal = glm::normalize(rec.normal);  // Always normalise before use!
         if (rtx.show_normals) {
             return rec.normal * 0.5f + 0.5f;
@@ -103,7 +103,7 @@ void setupScene(RTContext &rtx, const char *filename)
     g_scene.spheres = {
         Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, new lambertian(glm::vec3(0.8, 0.8, 0.3))),
         Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, new lambertian(glm::vec3(0.8, 0.8, 0.0))),
-        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f, new lambertian(glm::vec3(0.8, 0.6, 0.2))),
+        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f, new metal(glm::vec3(0.8, 0.6, 0.2))),
         Sphere(glm::vec3(0.75f, 0.75f, 0.0f), 0.25f, new lambertian(glm::vec3(0.8, 0.8, 0.8))),
     };
     //g_scene.boxes = {

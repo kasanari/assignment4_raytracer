@@ -39,4 +39,22 @@ class lambertian : public material {
         glm::vec3 albedo;
 };
 
+glm::vec3 reflect(const glm::vec3& v, const glm::vec3& n) {
+    return v - 2*glm::dot(v, n)*n;
+}
+
+class metal : public material {
+    public:
+        metal(const glm::vec3& a) : albedo(a) {}
+
+        virtual bool scatter(const Ray& r_in, const HitRecord& rec, glm::vec3& attenuation, Ray& scattered) const {
+            glm::vec3 reflected = reflect(glm::normalize(r_in.direction()), rec.normal);
+            scattered = Ray(rec.p, reflected);
+            attenuation = albedo;
+            return (glm::dot(scattered.direction(), rec.normal) > 0);
+        }
+
+        glm::vec3 albedo;
+};
+
 } 
