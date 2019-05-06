@@ -54,6 +54,15 @@ bool hit_world(const Ray &r, float t_min, float t_max, HitRecord &rec)
     return hit_anything;
 }
 
+
+glm::vec3 random_in_unit_sphere() {
+    glm::vec3 p;
+    do {
+        p = 2.0f*glm::vec3(drand48(), drand48(), drand48()) - glm::vec3(1,1,1);
+    } while (glm::length(p) >= 1.0);
+    return p;
+}
+
 // This function should be called recursively (inside the function) for
 // bouncing rays when you compute the lighting for materials, like this
 //
@@ -74,9 +83,11 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
             return rec.normal * 0.5f + 0.5f;
         }
 
+        glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
+
         // Implement lighting for materials here
         // ...
-        return glm::vec3(0.0f);
+        return 0.5f*color(rtx, Ray(rec.p, target-rec.p), max_bounces);
     }
 
     // If no hit, return sky color
@@ -129,7 +140,7 @@ void updateLine(RTContext &rtx, int y)
     // You can try to parallelise this loop by uncommenting this line:
     //#pragma omp parallel for schedule(dynamic)
     for (int x = 0; x < nx; ++x) {
-        glm::vec3 c = glm::vec3(0,0,0);
+        glm::vec3 c = glm::vec3(0.0f, 0.0f, 0.0f);
         for (int s = 0; s < rtx.antialiasing_samples; s++) {
             float u = (float(x) + drand48()) / float(nx);
             float v = (float(y) + drand48()) / float(ny);
