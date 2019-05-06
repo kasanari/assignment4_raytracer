@@ -4,6 +4,7 @@
 #include "sphere.h"
 #include "triangle.h"
 #include "box.h"
+#include "material.h"
 
 #include "utils2.h"  // Used for OBJ-mesh loading
 #include <stdlib.h>  // Needed for drand48()
@@ -21,7 +22,7 @@ struct Scene {
 
 bool hit_world(const Ray &r, float t_min, float t_max, HitRecord &rec)
 {
-    HitRecord temp_rec;
+    HitRecord temp_rec = {0, glm::vec3(0,0,0), glm::vec3(0,0,0), 0};
     bool hit_anything = false;
     float closest_so_far = t_max;
 
@@ -71,7 +72,7 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
     if (max_bounces < 0) return glm::vec3(0.0f);
 
     HitRecord rec;
-    if (hit_world(r, 0.0f, 9999.0f, rec)) {
+    if (hit_world(r, 0.0f+0.001f, 9999.0f, rec)) {
         rec.normal = glm::normalize(rec.normal);  // Always normalise before use!
         if (rtx.show_normals) {
             return rec.normal * 0.5f + 0.5f;
@@ -79,8 +80,10 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
 
         Ray scattered;
         glm::vec3 attenuation;
-        rec.mat_ptr->scatter(r, rec, attenuation, scattered);
 
+        if (rec.mat_ptr != NULL) {
+            rec.mat_ptr->scatter(r, rec, attenuation, scattered);
+        }
 
         // Implement lighting for materials here
         // ...
