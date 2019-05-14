@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <vector>
+#include <string>
 
 namespace rt {
 
@@ -26,11 +27,12 @@ struct RTContext {
     bool show_antialiasing = true;
     float fuzz_factor = 0;
     float refractive_index = 1.5;
+    std::string path = "";
     // Add more settings and parameters here
     // ...
 };
 
-void setupScene(RTContext &rtx, const char *mesh_filename);
+void setupScene(RTContext &rtx, std::string mesh_filename);
 void updateImage(RTContext &rtx);
 void resetImage(RTContext &rtx);
 void resetAccumulation(RTContext &rtx);

@@ -5,6 +5,7 @@
 #include "triangle.h"
 #include "box.h"
 #include "material.h"
+#include <string>
 
 #include "utils2.h"  // Used for OBJ-mesh loading
 #include <stdlib.h>  // Needed for drand48()
@@ -45,13 +46,17 @@ bool hit_world(const Ray &r, float t_min, float t_max, HitRecord &rec)
             rec = temp_rec;
         }
     }
-    for (int i = 0; i < g_scene.mesh.size(); ++i) {
-        if (g_scene.mesh[i].hit(r, t_min, closest_so_far, temp_rec)) {
-            hit_anything = true;
-            closest_so_far = temp_rec.t;
-            rec = temp_rec;
+
+    if (g_scene.mesh_bbox.hit(r, t_min, closest_so_far, temp_rec)) {
+        for (int i = 0; i < g_scene.mesh.size(); ++i) {
+            if (g_scene.mesh[i].hit(r, t_min, closest_so_far, temp_rec)) {
+                hit_anything = true;
+                closest_so_far = temp_rec.t;
+                rec = temp_rec;
+            }
         }
     }
+
     return hit_anything;
 }
 
@@ -85,6 +90,7 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
             if(rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
                 return attenuation*color(rtx, scattered, max_bounces-1);
             } else {
+                printf("scatter was NULL\n");
                 return glm::vec3(0.0f);
             }
         }
@@ -100,9 +106,52 @@ glm::vec3 color(RTContext &rtx, const Ray &r, int max_bounces)
     return (1.0f - t) * rtx.ground_color + t * rtx.sky_color;
 }
 
+glm::vec3 max_coordinates(OBJMesh mesh) {
+    float max_x = -999;
+    float max_y = -999;
+    float max_z = -999;
+    for (int i = 0; i < mesh.indices.size(); i++) {
+        int i0 = mesh.indices[i];
+        if (max_x < mesh.vertices[i0].x){
+            max_x =  mesh.vertices[i0].x;
+        }
+        if (max_y < mesh.vertices[i0].y) {
+            max_y = mesh.vertices[i0].y;
+        }
+        if (max_z < mesh.vertices[i0].z){
+            max_z =mesh.vertices[i0].z;
+        }
+    }
+    return glm::vec3(max_x, max_y, max_z);
+}
+
+glm::vec3 min_coordinates(OBJMesh mesh) {
+    float max_x = 999;
+    float max_y = 999;
+    float max_z =999;
+    for (int i = 0; i < mesh.indices.size(); i++) {
+        int i0 = mesh.indices[i];
+        if (max_x > mesh.vertices[i0].x) {
+            max_x =  mesh.vertices[i0].x;
+        }
+        if (max_y > mesh.vertices[i0].y){
+            max_y =mesh.vertices[i0].y;
+        }
+        if (max_z >mesh.vertices[i0].z) {
+            max_z = mesh.vertices[i0].z;
+        }
+    }
+    return glm::vec3(max_x, max_y, max_z);
+}
+
 // MODIFY THIS FUNCTION!
-void setupScene(RTContext &rtx, const char *filename)
+void setupScene(RTContext &rtx, std::string filename)
 {
+    
+    if (rtx.path == "") {
+        rtx.path = filename;
+    }
+
     g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f, new lambertian(glm::vec3(0.8, 0.3, 0.3)));
     g_scene.spheres = {
         Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, new lambertian(glm::vec3(0.8, 0.8, 0.3))),
@@ -118,18 +167,24 @@ void setupScene(RTContext &rtx, const char *filename)
     //    Box(glm::vec3(-1.0f, -0.25f, 0.0f), glm::vec3(0.25f)),
     //};
 
-    //OBJMesh mesh;
-    //objMeshLoad(mesh, filename);
-    //g_scene.mesh.clear();
-    //for (int i = 0; i < mesh.indices.size(); i += 3) {
-    //    int i0 = mesh.indices[i + 0];
-    //    int i1 = mesh.indices[i + 1];
-    //    int i2 = mesh.indices[i + 2];
-    //    glm::vec3 v0 = mesh.vertices[i0] + glm::vec3(0.0f, 0.135f, 0.0f);
-    //    glm::vec3 v1 = mesh.vertices[i1] + glm::vec3(0.0f, 0.135f, 0.0f);
-    //    glm::vec3 v2 = mesh.vertices[i2] + glm::vec3(0.0f, 0.135f, 0.0f);
-    //    g_scene.mesh.push_back(Triangle(v0, v1, v2));
-    //}
+    OBJMesh mesh;
+    objMeshLoad(mesh, filename);
+
+    glm::vec3 max_edges = max_coordinates(mesh);
+    glm::vec3 min_edges = min_coordinates(mesh);
+
+    g_scene.mesh_bbox = Box(glm::vec3(0, 0, 0), max_edges);
+
+    g_scene.mesh.clear();
+    for (int i = 0; i < mesh.indices.size(); i += 3) {
+       int i0 = mesh.indices[i + 0];
+       int i1 = mesh.indices[i + 1];
+       int i2 = mesh.indices[i + 2];
+       glm::vec3 v0 = mesh.vertices[i0] + glm::vec3(0.0f, 0.135f, 0.0f);
+       glm::vec3 v1 = mesh.vertices[i1] + glm::vec3(0.0f, 0.135f, 0.0f);
+       glm::vec3 v2 = mesh.vertices[i2] + glm::vec3(0.0f, 0.135f, 0.0f);
+       g_scene.mesh.push_back(Triangle(v0, v1, v2, new metal(glm::vec3(0.8, 0.6, 0.2), rtx.fuzz_factor)));
+    }
 }
 
 // MODIFY THIS FUNCTION!
@@ -200,11 +255,12 @@ void resetImage(RTContext &rtx)
     rtx.current_frame = 0;
     rtx.current_line = 0;
     rtx.freeze = false;
+    setupScene(rtx, rtx.path);
 }
 
 void resetAccumulation(RTContext &rtx)
 {
-    setupScene(rtx, "");
+    setupScene(rtx, rtx.path);
     rtx.current_frame = -1;
 }
 
