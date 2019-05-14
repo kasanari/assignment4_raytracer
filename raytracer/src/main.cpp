@@ -33,6 +33,7 @@ struct Context {
     rt::RTContext rtx;
     GLuint texture = 0;
     float elapsed_time;
+    bool gamma_correction = true;
 };
 
 // Returns the value of an environment variable
@@ -126,6 +127,7 @@ void drawImage(Context &ctx)
     // Activate program and pass uniform for texture unit
     glUseProgram(ctx.program);
     glUniform1i(glGetUniformLocation(ctx.program, "u_texture"), 0);
+    glUniform1i(glGetUniformLocation(ctx.program, "gamma_correction"), ctx.gamma_correction);
 
     // Draw single triangle (without any vertex buffers)
     glBindVertexArray(ctx.defaultVAO);
@@ -158,7 +160,10 @@ void showGui(Context &ctx)
     }
     if (ImGui::SliderFloat("Refractive Index", &ctx.rtx.refractive_index, 1, 3)) {
         rt::resetAccumulation(ctx.rtx);
-    }        
+    }     
+    if (ImGui::Checkbox("Gamma correction", &ctx.gamma_correction)) {
+        rt::resetAccumulation(ctx.rtx);
+    }   
     // Add more settings and parameters here
     // ...
 
