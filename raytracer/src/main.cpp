@@ -147,6 +147,18 @@ void showGui(Context &ctx)
     if (ImGui::Checkbox("Show normals", &ctx.rtx.show_normals)) {
         rt::resetAccumulation(ctx.rtx);
     }
+    if (ImGui::Checkbox("Antialiasing", &ctx.rtx.show_antialiasing)) {
+        rt::resetAccumulation(ctx.rtx);
+    }
+    if (ImGui::SliderInt("Antialiasing samples", &ctx.rtx.antialiasing_samples , 1, 500)) {
+        rt::resetAccumulation(ctx.rtx);
+    }
+    if (ImGui::SliderFloat("Metal fuzz", &ctx.rtx.fuzz_factor, 0, 1)) {
+        rt::resetAccumulation(ctx.rtx);
+    }
+    if (ImGui::SliderFloat("Refractive Index", &ctx.rtx.refractive_index, 1, 3)) {
+        rt::resetAccumulation(ctx.rtx);
+    }        
     // Add more settings and parameters here
     // ...
 

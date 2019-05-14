@@ -23,6 +23,9 @@ struct RTContext {
     glm::vec3 sky_color = glm::vec3(0.5f, 0.7f, 1.0f);
     bool show_normals = false;
     int antialiasing_samples = 100;
+    bool show_antialiasing = true;
+    float fuzz_factor = 0;
+    float refractive_index = 1.5;
     // Add more settings and parameters here
     // ...
 };

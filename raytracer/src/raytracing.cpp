@@ -106,10 +106,10 @@ void setupScene(RTContext &rtx, const char *filename)
     g_scene.ground = Sphere(glm::vec3(0.0f, -1000.5f, 0.0f), 1000.0f, new lambertian(glm::vec3(0.8, 0.3, 0.3)));
     g_scene.spheres = {
         Sphere(glm::vec3(0.0f, 0.0f, 0.0f), 0.5f, new lambertian(glm::vec3(0.8, 0.8, 0.3))),
-        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, new dielectric(1.5)),
-        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), -0.45f, new dielectric(1.5)),
+        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), 0.5f, new dielectric(rtx.refractive_index)),
+        Sphere(glm::vec3(1.0f, 0.0f, 0.0f), -0.45f, new dielectric(rtx.refractive_index)),
 
-        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f, new metal(glm::vec3(0.8, 0.6, 0.2))),
+        Sphere(glm::vec3(-1.0f, 0.0f, 0.0f), 0.5f, new metal(glm::vec3(0.8, 0.6, 0.2), rtx.fuzz_factor)),
         Sphere(glm::vec3(0.75f, 0.75f, 0.0f), 0.25f, new lambertian(glm::vec3(0.8, 0.8, 0.8))),
     };
     //g_scene.boxes = {
@@ -138,6 +138,7 @@ void updateLine(RTContext &rtx, int y)
     int nx = rtx.width;
     int ny = rtx.height;
     float aspect = float(nx) / float(ny);
+    int aa_samples = 1;
     glm::vec3 lower_left_corner(-1.0f * aspect, -1.0f, -1.0f);
     glm::vec3 horizontal(2.0f * aspect, 0.0f, 0.0f);
     glm::vec3 vertical(0.0f, 2.0f, 0.0f);
@@ -148,7 +149,12 @@ void updateLine(RTContext &rtx, int y)
     //#pragma omp parallel for schedule(dynamic)
     for (int x = 0; x < nx; ++x) {
         glm::vec3 c = glm::vec3(0.0f, 0.0f, 0.0f);
-        for (int s = 0; s < rtx.antialiasing_samples; s++) {
+        if(rtx.show_antialiasing) {
+            aa_samples = rtx.antialiasing_samples;
+        } else {
+            aa_samples = 1;
+        }
+        for (int s = 0; s < aa_samples; s++) {
             float u = (float(x) + drand48()) / float(nx);
             float v = (float(y) + drand48()) / float(ny);
             Ray r(origin, lower_left_corner + u * horizontal + v * vertical);
@@ -158,7 +164,7 @@ void updateLine(RTContext &rtx, int y)
         
             c += color(rtx, r, rtx.max_bounces);
         }
-        c /= float(rtx.antialiasing_samples);
+        c /= float(aa_samples);
 
         if (rtx.current_frame <= 0) {
             // Here we make the first frame blend with the old image,
@@ -198,6 +204,7 @@ void resetImage(RTContext &rtx)
 
 void resetAccumulation(RTContext &rtx)
 {
+    setupScene(rtx, "");
     rtx.current_frame = -1;
 }
 
